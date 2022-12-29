@@ -1,0 +1,70 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link href="/style.css" rel="stylesheet" type="text/css" media="all">
+    <script src="https://thunkable.github.io/webviewer-extension/thunkableWebviewerExtension.js" type="text/javascript"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  </head>
+  <body>
+    <div class="g-recaptcha" data-sitekey="YOUR_KEY" data-theme="light" data-size="normal" data-callback="verifyCallback" data-expired-callback="expired" data-error-callback="error"></div>
+    <script>
+      var uriIP = 'https://www.cloudflare.com/cdn-cgi/trace';
+     
+      var uriGAS = ' GOOGLE_APP_SCRIPT_URL';
+      
+      var ip;
+      fetch(uriIP)
+        .then(response => response.text())
+        .then(result => {
+          var resultArr = result.split('\n');
+          for(var i = 0, len = resultArr.length; i < len; i++)	{
+            var tempArr = resultArr[i].split('=');
+            if(tempArr[0] == 'ip') {
+              ip = tempArr[1];
+              break;
+            }
+          }
+        })
+        .catch(err => {
+          window.alert(err)
+        });
+  
+function verifyCallback(token) {
+  var formData = new FormData();
+  formData.append('token', token);
+  formData.append('ip', ip);
+	
+      
+  fetch(uriGAS, {
+    method: "POST",
+    body: formData
+  }).then(response => response.json())
+    .then(result => {
+      if(result.success) {
+      	post_thunkable('reCAPTCHA Verified successfully');
+      } else {
+      	post_thunkable(result['error-codes'][0]);
+      }
+    })
+    .catch(err => {
+    	post_thunkable(err);
+    })
+}
+      
+      function expired(ex) {
+        post_thunkable('reCAPTCHA Verification program expired');
+      }
+      
+      function error(err) {
+        post_thunkable('reCAPTCHA verification failed');
+      }
+    </script>
+    <script>
+    function post_thunkable(text){
+    ThunkableWebviewerExtension.postMessage(text);
+    }
+    </script>
+  </body>
+</html>
